@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GigaMerge Studio | Creative Tech Ecosystem</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js">
+    </script>
+
+    <style>
+        :root {
+            --bg: #050510;
+            --bg2: #0a0a1a;
+            --surface: rgba(15, 15, 40, 0.7);
+            --surface2: rgba(20, 20, 55, 0.5);
+            --text: #e8e8f0;
+            --text2: #b0b0cc;
+            --neon-cyan: #00e5ff;
+            --neon-blue: #3b82f6;
+            --neon-purple: #a855f7;
+            --glow-cyan: 0 0 30px rgba(0, 229, 255, 0.4);
+            --glow-purple: 0 0 30px rgba(168, 85, 247, 0.4);
+            --glow-blue: 0 0 30px rgba(59, 130, 246, 0.4);
+            --border-glow: rgba(0, 229, 255, 0.3);
+            --glass-bg: rgba(10, 10, 30, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --card-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+            --transition-speed: 0.5s;
+        }
+
+        [data-theme="light"] {
+            --bg: #f5f5fa;
+            --bg2: #eaeaef;
+            --surface: rgba(255, 255, 255, 0.75);
+            --surface2: rgba(240, 240, 250, 0.6);
+            --text: #1a1a2e;
+            --text2: #4a4a6a;
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --card-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+            --border-glow: rgba(59, 130, 246, 0.25);
+        }
+
+        [data-theme="neon"] {
+            --bg: #020010;
+            --bg2: #060620;
+            --surface: rgba(10, 5, 35, 0.8);
+            --surface2: rgba(20, 10, 50, 0.55);
+            --text: #f0eaff;
+            --text2: #c0b0e0;
+            --neon-cyan: #00ffff;
+            --neon-blue: #5b9cff;
+            --neon-purple: #c084fc;
+            --glow-cyan: 0 0 50px rgba(0, 255, 255, 0.6);
+            --glow-purple: 0 0 50px rgba(192, 132, 252, 0.6);
+            --glow-blue: 0 0 50px rgba(91, 156, 255, 0.6);
+            --glass-bg: rgba(5, 2, 25, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --border-glow: rgba(0, 255, 255, 0.5);
+            --card-shadow: 0 8px 50px rgba(0, 200, 255, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            transition: background var(--transition-speed), color var(--transition-speed);
+            -webkit-font-smoothing: antialiased;
+            cursor: default;
+        }
+
+        /* THREE.JS CANVAS */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* INTRO OVERLAY */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000010;
+            transition: opacity 1s ease, visibility 1s ease;
+            pointer-events: all;
+        }
+        #intro-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        #intro-overlay .intro-logo-text {
+            font-size: clamp(1.8rem, 5vw, 3.5rem);
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 30px rgba(0, 229, 255, 0.7));
+            opacity: 0;
+            text-align: center;
+            z-index: 1001;
+            position: relative;
+        }
+        #intro-overlay .welcome-sub {
+            position: absolute;
+            bottom: 22vh;
+            font-size: 1.2rem;
+            color: #c0d0ff;
+            opacity: 0;
+            z-index: 1001;
+            letter-spacing: 0.08em;
+            text-align: center;
+        }
+
+        /* MAIN CONTENT WRAPPER */
+        #main-content {
+            position: relative;
+            z-index: 1;
+            pointer-events: all;
+            transition: opacity 0.8s ease;
+        }
+        #main-content.init-hidden {
+            opacity: 0;
+        }
+        #main-content.visible {
+            opacity: 1;
+        }
+
+        /* SECTIONS */
+        section {
+            position: relative;
+            z-index: 1;
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 50vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .section-tag {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--neon-cyan);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff, #c0d0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+        .section-desc {
+            font-size: 1.15rem;
+            color: var(--text2);
+            max-width: 650px;
+            line-height: 1.7;
+        }
+
+        /* HERO */
+        #hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            text-align: left;
+            padding-top: 2rem;
+        }
+        #hero .hero-title {
+            font-size: clamp(2.8rem, 7vw, 5.5rem);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #fff 20%, var(--neon-cyan) 50%, var(--neon-purple) 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 40px rgba(0, 229, 255, 0.5));
+            margin-bottom: 0.5rem;
+            line-height: 1.05;
+        }
+        #hero .hero-sub {
+            font-size: clamp(1.1rem, 2vw, 1.5rem);
+            color: #c0d0ff;
+            margin-bottom: 1.2rem;
+            letter-spacing: 0.03em;
+        }
+        #hero .hero-desc {
+            font-size: 1.1rem;
+            color: var(--text2);
+            max-width: 550px;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.85rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            border: 2px solid transparent;
+            text-decoration: none;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+            color: #000;
+            border: none;
+            box-shadow: var(--glow-cyan);
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 50px rgba(0, 229, 255, 0.7);
+            transform: translateY(-3px);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--neon-purple);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+        }
+        .btn-outline:hover {
+            background: rgba(168, 85, 247, 0.15);
+            box-shadow: 0 0 35px rgba(168, 85, 247, 0.5);
+            transform: translateY(-3px);
+        }
+
+        /* GLASS CARDS */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            padding: 1.5px;
+            background: linear-gradient(135deg, var(--border-glow), transparent 40%, transparent 60%, var(--border-glow));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .glass-card:hover {
+            transform: translateY(-8px) rotateX(3deg) rotateY(-2deg);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), var(--glow-cyan);
+            border-color: rgba(0, 229, 255, 0.4);
+        }
+
+        /* GRID LAYOUTS */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            width: 100%;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            width: 100%;
+        }
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+        }
+        .grid-5 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.2rem;
+            width: 100%;
+        }
+
+        /* SERVICE CARD 3D */
+        .service-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2.5rem 1.8rem;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            perspective: 800px;
+        }
+        .service-card:hover {
+            transform: translateY(-12px) rotateX(5deg) rotateY(-3deg) scale(1.03);
+            box-shadow: 0 25px 65px rgba(0, 0, 0, 0.6), var(--glow-purple);
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+        .service-card .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.5));
+            transition: transform 0.4s ease;
+        }
+        .service-card:hover .icon {
+            transform: scale(1.2) translateZ(20px);
+        }
+        .service-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+        .service-card p {
+            font-size: 0.9rem;
+            color: var(--text2);
+            line-height: 1.5;
+        }
+        .service-card .glow-dot {
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 229, 255, 0.35) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* TIMELINE */
+        .timeline {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            position: relative;
+            justify-content: center;
+        }
+        .timeline-step {
+            flex: 1;
+            min-width: 200px;
+            max-width: 260px;
+            text-align: center;
+            position: relative;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem 1.5rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow);
+            transition: all 0.4s ease;
+        }
+        .timeline-step:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), var(--glow-blue);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+        .timeline-step .step-num {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .timeline-connector {
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 2rem;
+            height: 2px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+            display: none;
+        }
+        @media(min-width:900px) {
+            .timeline-connector {
+                display: block;
+            }
+        }
+
+        /* FLIP CARD */
+        .flip-card {
+            perspective: 1000px;
+            min-height: 280px;
+            cursor: pointer;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 280px;
+            transition: transform 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+            transform-style: preserve-3d;
+        }
+        .flip-card:hover .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+            background: rgba(15, 10, 40, 0.85);
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+
+        /* CHECKLIST */
+        .checklist {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .checklist li {
+            padding: 1rem 1.5rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: var(--card-shadow);
+        }
+        .checklist li:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: var(--glow-cyan);
+            transform: translateX(6px);
+        }
+        .checklist .check-icon {
+            color: var(--neon-cyan);
+            font-size: 1.4rem;
+            filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.6));
+        }
+
+        /* FUTURE VISION */
+        #future {
+            position: relative;
+            overflow: hidden;
+            border-radius: 30px;
+            background: radial-gradient(ellipse at center, rgba(30, 10, 60, 0.6) 0%, transparent 70%);
+            border: 1px solid var(--glass-border);
+            text-align: center;
+            padding: 5rem 2rem;
+        }
+        #future .vision-text {
+            font-size: clamp(1.4rem, 3vw, 2.2rem);
+            font-weight: 700;
+            max-width: 700px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #fff, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.4;
+        }
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            animation: ringPulse 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .ring:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            top: -100px;
+            right: -80px;
+            animation-delay: 0s;
+        }
+        .ring:nth-child(2) {
+            width: 400px;
+            height: 400px;
+            bottom: -150px;
+            left: -100px;
+            animation-delay: 1.5s;
+            border-color: rgba(168, 85, 247, 0.2);
+        }
+        @keyframes ringPulse {
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.25);
+                opacity: 1;
+            }
+        }
+
+        /* CHATBOT */
+        #chatbot-toggle {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 999;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            border: none;
+            cursor: pointer;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--glow-cyan);
+            transition: all 0.4s ease;
+            animation: floatBtn 3s ease-in-out infinite;
+        }
+        #chatbot-toggle:hover {
+            box-shadow: 0 0 60px rgba(0, 229, 255, 0.8);
+            transform: scale(1.1);
+        }
+        @keyframes floatBtn {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+        #chatbot-panel {
+            position: fixed;
+            bottom: 6rem;
+            right: 2rem;
+            z-index: 998;
+            width: 370px;
+            max-width: 90vw;
+            max-height: 500px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), var(--glow-purple);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: translateY(20px) scale(0.95);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            pointer-events: none;
+        }
+        #chatbot-panel.open {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+        }
+        #chatbot-panel .chat-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        #chatbot-panel .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            max-height: 340px;
+        }
+        #chatbot-panel .chat-messages .msg {
+            padding: 0.7rem 1rem;
+            border-radius: 16px;
+            max-width: 80%;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            animation: fadeInUp 0.3s ease;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .msg.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .msg.bot {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.07);
+            color: #e0e0f0;
+            border-bottom-left-radius: 4px;
+        }
+        #chatbot-panel .chat-input-area {
+            display: flex;
+            padding: 0.7rem 1rem;
+            gap: 0.5rem;
+            border-top: 1px solid var(--glass-border);
+        }
+        #chatbot-panel input {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border 0.3s;
+        }
+        #chatbot-panel input:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+        #chatbot-panel .send-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: none;
+            background: var(--neon-cyan);
+            color: #000;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        #chatbot-panel .send-btn:hover {
+            box-shadow: var(--glow-cyan);
+            transform: scale(1.08);
+        }
+
+        /* THEME TOGGLE */
+        #theme-toggle {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 999;
+            display: flex;
+            gap: 0.4rem;
+            background: var(--glass-bg);
+            border-radius: 30px;
+            padding: 0.3rem;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        #theme-toggle button {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            background: transparent;
+            color: var(--text2);
+        }
+        #theme-toggle button.active {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: var(--glow-cyan);
+        }
+
+        /* SOUND TOGGLE */
+        #sound-toggle {
+            position: fixed;
+            top: 1.5rem;
+            right: 10rem;
+            z-index: 999;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            font-size: 1rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: #fff;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #sound-toggle:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        /* MOUSE GLOW */
+        #mouse-glow {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 229, 255, 0.08) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+        }
+
+        /* RESPONSIVE */
+        @media(max-width:768px) {
+            section {
+                padding: 3rem 1.2rem;
+            }
+            #hero {
+                min-height: 80vh;
+                text-align: center;
+                align-items: center;
+            }
+            #hero .hero-desc {
+                text-align: center;
+            }
+            .btn-group {
+                justify-content: center;
+            }
+            .grid-2,
+            .grid-3,
+            .grid-4,
+            .grid-5 {
+                grid-template-columns: 1fr;
+            }
+            #chatbot-panel {
+                width: 92vw;
+                right: 4vw;
+                bottom: 5rem;
+            }
+            #theme-toggle {
+                top: 0.8rem;
+                right: 0.8rem;
+            }
+            #sound-toggle {
+                top: 0.8rem;
+                right: 7rem;
+            }
+            #chatbot-toggle {
+                bottom: 1.2rem;
+                right: 1.2rem;
+                width: 50px;
+                height: 50px;
+                font-size: 1.3rem;
+            }
+            .timeline {
+                flex-direction: column;
+                align-items: center;
+            }
+            .timeline-connector {
+                display: none;
+            }
+            .flip-card {
+                min-height: 240px;
+            }
+            .flip-card-inner {
+                min-height: 240px;
+            }
+        }
+        @media(max-width:400px) {
+            #hero .hero-title {
+                font-size: 2rem;
+            }
+            .section-title {
+                font-size: 1.5rem;
+            }
+            .btn {
+                padding: 0.6rem 1.3rem;
+                font-size: 0.8rem;
+            }
+            #chatbot-panel {
+                width: 96vw;
+                right: 2vw;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <!-- THREE.JS BACKGROUND CANVAS -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- MOUSE GLOW -->
+    <div id="mouse-glow"></div>
+
+    <!-- INTRO OVERLAY -->
+    <div id="intro-overlay">
+        <div class="intro-logo-text" id="intro-logo-text">GigaMerge Studio</div>
+        <div class="welcome-sub" id="welcome-sub"></div>
+    </div>
+
+
+    <!-- THEME TOGGLE -->
+    <div id="theme-toggle">
+        <button data-theme="dark" class="active" title="Dark">🌙</button>
+        <button data-theme="light" title="Light">☀️</button>
+        <button data-theme="neon" title="Neon">💜</button>
+    </div>
+
+    <!-- SOUND TOGGLE -->
+    <button id="sound-toggle" title="Toggle Sound">🔊</button>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content" class="init-hidden">
+
+        <!-- HERO -->
+        <section id="hero">
+            <span class="section-tag">🚀 Creative Tech Ecosystem</span>
+            <h1 class="hero-title">GigaMerge<br>Studio</h1>
+            <p class="hero-sub">Where Creativity Meets Technology</p>
+            <p class="hero-desc">We help creators, startups, and businesses scale with professional editing, development, and digital solutions.</p>
+            <div class="btn-group">
+                <a href="#services" class="btn btn-primary">Explore Services</a>
+                <a href="#about" class="btn btn-outline">Join Network</a>
+            </div>
+        </section>
+
+        <!-- ABOUT -->
+        <section id="about">
+            <span class="section-tag">⚡ About</span>
+            <h2 class="section-title">What is GigaMerge Studio?</h2>
+            <p class="section-desc">A creative talent network and digital service agency connecting businesses and creators with professional editors, developers, and creative specialists.</p>
+            <br>
+            <div class="grid-2">
+                <div class="glass-card">
+                    <h3 style="color:var(--neon-cyan);margin-bottom:0.5rem;">🎯 Mission</h3>
+                    <p style="color:var(--text2);line-height:1.6;">To help creators, brands, and businesses scale faster through professional editing, development, and digital solutions powered by a strong creative network.</p>
+                </div>
+                <div class="glass-card">
+                    <h3 style="color:var(--neon-purple);margin-bottom:0.5rem;">🔭 Vision</h3>
+                    <p style="color:var(--text2);line-height:1.6;">Build a scalable digital ecosystem where creators and businesses access reliable creative and technical services in one unified platform.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SERVICES -->
+        <section id="services">
+            <span class="section-tag">💼 Services</span>
+            <h2 class="section-title">What We Offer</h2>
+            <br>
+            <div class="grid-3">
+                <div class="service-card">
+                    <div class="glow-dot"></div>
+                    <div class="icon">🎬</div>
+                    <h3>Video Editing</h3>
+                    <p>Professional video editing for YouTube, social media, commercials, and cinematic projects.</p>
+                </div>
+                <div class="service-card">
+                    <div class="glow-dot"></div>
+                    <div class="icon">🌐</div>
+                    <h3>Web Development</h3>
+                    <p>Custom websites, web apps, and digital platforms built with cutting-edge technology.</p>
+                </div>
+                <div class="service-card">
+                    <div class="glow-dot"></div>
+                    <div class="icon">💻</div>
+                    <h3>Coding & Development</h3>
+                    <p>Full-stack development, automation tools, and custom software solutions for your business.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- HOW IT WORKS -->
+        <section id="how-it-works">
+            <span class="section-tag">⚙️ Process</span>
+            <h2 class="section-title">How Our System Works</h2>
+            <br>
+            <div class="timeline">
+                <div class="timeline-step">
+                    <div class="step-num">01</div>
+                    <h4>Client Requirement</h4>
+                    <p style="color:var(--text2);font-size:0.85rem;">Share your project needs and goals with us.</p>
+                    <div class="timeline-connector"></div>
+                </div>
+                <div class="timeline-step">
+                    <div class="step-num">02</div>
+                    <h4>Team Assignment</h4>
+                    <p style="color:var(--text2);font-size:0.85rem;">We match the right creative specialists to your project.</p>
+                    <div class="timeline-connector"></div>
+                </div>
+                <div class="timeline-step">
+                    <div class="step-num">03</div>
+                    <h4>Project Execution</h4>
+                    <p style="color:var(--text2);font-size:0.85rem;">Professional workflow with regular updates and feedback.</p>
+                    <div class="timeline-connector"></div>
+                </div>
+                <div class="timeline-step">
+                    <div class="step-num">04</div>
+                    <h4>Delivery & Support</h4>
+                    <p style="color:var(--text2);font-size:0.85rem;">High-quality delivery with ongoing support and revisions.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TEAM -->
+        <section id="team">
+            <span class="section-tag">👥 Team</span>
+            <h2 class="section-title">Our Structure</h2>
+            <br>
+            <div class="grid-4">
+                <div class="flip-card">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <span style="font-size:3rem;">🧠</span>
+                            <h3>Founder</h3>
+                            <p style="color:var(--text2);font-size:0.85rem;">Vision & Strategy</p>
+                        </div>
+                        <div class="flip-card-back">
+                            <h4 style="color:var(--neon-cyan);">Founder</h4>
+                            <p style="color:#ddd;font-size:0.85rem;">Leads the vision, builds partnerships, and drives the company's mission forward.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flip-card">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <span style="font-size:3rem;">📋</span>
+                            <h3>Operations</h3>
+                            <p style="color:var(--text2);font-size:0.85rem;">Management</p>
+                        </div>
+                        <div class="flip-card-back">
+                            <h4 style="color:var(--neon-cyan);">Operations</h4>
+                            <p style="color:#ddd;font-size:0.85rem;">Manages workflows, client communication, and ensures smooth project delivery.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flip-card">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <span style="font-size:3rem;">🎨</span>
+                            <h3>Creative Team</h3>
+                            <p style="color:var(--text2);font-size:0.85rem;">Editors & Designers</p>
+                        </div>
+                        <div class="flip-card-back">
+                            <h4 style="color:var(--neon-cyan);">Creative Team</h4>
+                            <p style="color:#ddd;font-size:0.85rem;">Talented editors, designers, and creative specialists delivering premium output.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flip-card">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <span style="font-size:3rem;">⚡</span>
+                            <h3>Dev Team</h3>
+                            <p style="color:var(--text2);font-size:0.85rem;">Developers</p>
+                        </div>
+                        <div class="flip-card-back">
+                            <h4 style="color:var(--neon-cyan);">Dev Team</h4>
+                            <p style="color:#ddd;font-size:0.85rem;">Skilled developers building robust web apps, tools, and digital solutions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- WHY CHOOSE US -->
+        <section id="why-us">
+            <span class="section-tag">📈 Why Us</span>
+            <h2 class="section-title">Why Choose GigaMerge?</h2>
+            <br>
+            <div class="grid-5">
+                <div class="glass-card" style="text-align:center;">
+                    <span style="font-size:2.5rem;">✔️</span>
+                    <h4>Professional Workflow</h4>
+                </div>
+                <div class="glass-card" style="text-align:center;">
+                    <span style="font-size:2.5rem;">👥</span>
+                    <h4>Dedicated Team</h4>
+                </div>
+                <div class="glass-card" style="text-align:center;">
+                    <span style="font-size:2.5rem;">⚡</span>
+                    <h4>Fast Delivery</h4>
+                </div>
+                <div class="glass-card" style="text-align:center;">
+                    <span style="font-size:2.5rem;">📈</span>
+                    <h4>Scalable Solutions</h4>
+                </div>
+                <div class="glass-card" style="text-align:center;">
+                    <span style="font-size:2.5rem;">🌐</span>
+                    <h4>Multi-Service Ecosystem</h4>
+                </div>
+            </div>
+        </section>
+
+        <!-- IDEAL CLIENTS -->
+        <section id="clients">
+            <span class="section-tag">🎯 Clients</span>
+            <h2 class="section-title">Ideal Clients</h2>
+            <br>
+            <div class="grid-3">
+                <div class="glass-card" style="text-align:center;"><span style="font-size:2.5rem;">▶️</span><h4>YouTubers</h4></div>
+                <div class="glass-card" style="text-align:center;"><span style="font-size:2.5rem;">🚀</span><h4>Startups</h4></div>
+                <div class="glass-card" style="text-align:center;"><span style="font-size:2.5rem;">🏷️</span><h4>Brands</h4></div>
+                <div class="glass-card" style="text-align:center;"><span style="font-size:2.5rem;">🏢</span><h4>Businesses</h4></div>
+                <div class="glass-card" style="text-align:center;"><span style="font-size:2.5rem;">🎤</span><h4>Coaches</h4></div>
+                <div class="glass-card" style="text-align:center;"><span style="font-size:2.5rem;">✨</span><h4>Creators</h4></div>
+            </div>
+        </section>
+
+        <!-- QUALITY -->
+        <section id="quality">
+            <span class="section-tag">🔒 Quality</span>
+            <h2 class="section-title">Our Quality Standards</h2>
+            <br>
+            <ul class="checklist">
+                <li><span class="check-icon">●</span> Professional communication</li>
+                <li><span class="check-icon">●</span> Deadline-focused workflow</li>
+                <li><span class="check-icon">●</span> Consistent quality control</li>
+                <li><span class="check-icon">●</span> Organized management</li>
+                <li><span class="check-icon">●</span> Secure collaboration</li>
+            </ul>
+        </section>
+
+        <!-- FUTURE VISION -->
+        <section id="future">
+            <div class="ring"></div>
+            <div class="ring"></div>
+            <span class="section-tag" style="position:relative;z-index:1;">🚀 Future</span>
+            <p class="vision-text" style="position:relative;z-index:1;">GigaMerge Studio aims to become a global creative and technology ecosystem.</p>
+        </section>
+
+        <!-- FOOTER SPACER -->
+        <div style="height:6rem;"></div>
+    </div>
+
+    <!-- CHATBOT TOGGLE -->
+    <button id="chatbot-toggle" title="AI Assistant">🤖</button>
+
+    <!-- CHATBOT PANEL -->
+    <div id="chatbot-panel">
+        <div class="chat-header">🤖 GigaMerge AI Assistant</div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="msg bot">Namaste! 👋 I'm your GigaMerge assistant. Ask me about services, joining, workflow, pricing, or our team!</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Type your message...">
+            <button class="send-btn" id="chat-send">➤</button>
+        </div>
+    </div>
+
+    <script>
+        // ===========================
+        // THREE-SCENE.JS
+        // ===========================
+        (function() {
+            const canvas = document.getElementById('bg-canvas');
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 1.5, 7);
+            camera.lookAt(0, 0, 0);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x1a1a3a, 1.2);
+            scene.add(ambientLight);
+            const pointLight1 = new THREE.PointLight(0x00e5ff, 2, 20);
+            pointLight1.position.set(3, 2, 4);
+            scene.add(pointLight1);
+            const pointLight2 = new THREE.PointLight(0xa855f7, 1.8, 18);
+            pointLight2.position.set(-3, -1, 3);
+            scene.add(pointLight2);
+            const pointLight3 = new THREE.PointLight(0x3b82f6, 1.5, 16);
+            pointLight3.position.set(0, 3, -3);
+            scene.add(pointLight3);
+
+            // Grid
+            const gridHelper = new THREE.PolarGridHelper(10, 40, 30, 128, 0x1a1a40, 0x1a1a40);
+            gridHelper.position.y = -2.5;
+            scene.add(gridHelper);
+
+            // Main 3D Logo Shape - Torus Knot
+            const logoGroup = new THREE.Group();
+            const torusKnotGeo = new THREE.TorusKnotGeometry(0.7, 0.2, 128, 32);
+            const torusKnotMat = new THREE.MeshStandardMaterial({
+                color: 0x00e5ff,
+                emissive: 0x003344,
+                roughness: 0.2,
+                metalness: 0.7,
+            });
+            const torusKnot = new THREE.Mesh(torusKnotGeo, torusKnotMat);
+            logoGroup.add(torusKnot);
+
+            // Glow ring around logo
+            const ringGeo = new THREE.TorusGeometry(0.85, 0.03, 32, 100);
+            const ringMat = new THREE.MeshStandardMaterial({
+                color: 0xa855f7,
+                emissive: 0x330044,
+                roughness: 0.1,
+                metalness: 0.3,
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            logoGroup.add(ring);
+
+            const ring2Geo = new THREE.TorusGeometry(0.9, 0.02, 32, 100);
+            const ring2Mat = new THREE.MeshStandardMaterial({
+                color: 0x3b82f6,
+                emissive: 0x001133,
+                roughness: 0.1,
+                metalness: 0.4,
+            });
+            const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+            ring2.rotation.x = Math.PI / 3;
+            ring2.rotation.y = Math.PI / 4;
+            logoGroup.add(ring2);
+
+            scene.add(logoGroup);
+
+            // Particles
+            const particlesCount = 500;
+            const particlesGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(particlesCount * 3);
+            const colors = new Float32Array(particlesCount * 3);
+            for (let i = 0; i < particlesCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 18;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 12;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 14;
+                const colorChoice = Math.random();
+                if (colorChoice < 0.33) {
+                    colors[i * 3] = 0;
+                    colors[i * 3 + 1] = 0.9;
+                    colors[i * 3 + 2] = 1;
+                } else if (colorChoice < 0.66) {
+                    colors[i * 3] = 0.66;
+                    colors[i * 3 + 1] = 0.33;
+                    colors[i * 3 + 2] = 0.97;
+                } else {
+                    colors[i * 3] = 0.23;
+                    colors[i * 3 + 1] = 0.51;
+                    colors[i * 3 + 2] = 0.96;
+                }
+            }
+            particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particlesGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            const particlesMat = new THREE.PointsMaterial({
+                size: 0.03,
+                vertexColors: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                transparent: true,
+                opacity: 0.8,
+            });
+            const particles = new THREE.Points(particlesGeo, particlesMat);
+            scene.add(particles);
+
+            // Small floating orbs
+            const orbs = [];
+            for (let i = 0; i < 12; i++) {
+                const orbGeo = new THREE.SphereGeometry(0.06, 16, 16);
+                const orbMat = new THREE.MeshStandardMaterial({
+                    color: i % 3 === 0 ? 0x00e5ff : i % 3 === 1 ? 0xa855f7 : 0x3b82f6,
+                    emissive: i % 3 === 0 ? 0x002233 : i % 3 === 1 ? 0x220033 : 0x001122,
+                    roughness: 0.2,
+                    metalness: 0.5,
+                });
+                const orb = new THREE.Mesh(orbGeo, orbMat);
+                orb.userData = {
+                    angle: (i / 12) * Math.PI * 2,
+                    radius: 1.5 + Math.random() * 2.5,
+                    speed: 0.3 + Math.random() * 0.7,
+                    yOffset: (Math.random() - 0.5) * 3,
+                };
+                orbs.push(orb);
+                scene.add(orb);
+            }
+
+            // Animation loop
+            let time = 0;
+            let introPhase = true;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                time += 0.005;
+
+                // Rotate logo
+                logoGroup.rotation.y += 0.008;
+                logoGroup.rotation.x += 0.003;
+                logoGroup.rotation.z += 0.002;
+                const pulse = 1 + Math.sin(time * 2) * 0.08;
+                logoGroup.scale.setScalar(pulse);
+
+                // Animate particles
+                particles.rotation.y += 0.0008;
+                particles.rotation.x += 0.0004;
+
+                // Animate orbs
+                orbs.forEach(orb => {
+                    orb.userData.angle += orb.userData.speed * 0.008;
+                    const a = orb.userData.angle;
+                    const r = orb.userData.radius;
+                    orb.position.x = Math.cos(a) * r;
+                    orb.position.z = Math.sin(a) * r;
+                    orb.position.y = orb.userData.yOffset + Math.sin(time * 1.5 + a) * 0.8;
+                    orb.scale.setScalar(0.7 + Math.sin(time * 2 + a) * 0.3);
+                });
+
+                // Pulse lights
+                pointLight1.intensity = 2 + Math.sin(time * 3) * 0.6;
+                pointLight2.intensity = 1.8 + Math.cos(time * 2.5) * 0.5;
+                pointLight3.intensity = 1.5 + Math.sin(time * 2.8 + 1) * 0.4;
+
+                // Subtle camera sway
+                if (!introPhase) {
+                    camera.position.x += (Math.sin(time * 0.3) * 0.4 - camera.position.x) * 0.02;
+                    camera.position.y += (1.5 + Math.cos(time * 0.25) * 0.3 - camera.position.y) * 0.02;
+                }
+                camera.lookAt(0, 0, 0);
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            // Resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // Expose for intro control
+            window.__threeScene = {
+                scene,
+                camera,
+                logoGroup,
+                setIntroPhase: (val) => { introPhase = val; },
+                getIntroPhase: () => introPhase,
+                resetCamera: () => {
+                    camera.position.set(0, 1.5, 7);
+                    camera.lookAt(0, 0, 0);
+                },
+                pullBackCamera: () => {
+                    gsap.to(camera.position, { x: 0, y: 2.5, z: 9, duration: 2.5, ease: 'power2.inOut' });
+                }
+            };
+        })();
+
+        // ===========================
+        // INTRO.JS
+        // ===========================
+        (function() {
+            const overlay = document.getElementById('intro-overlay');
+            const logoText = document.getElementById('intro-logo-text');
+            const welcomeSub = document.getElementById('welcome-sub');
+            const mainContent = document.getElementById('main-content');
+            const soundToggle = document.getElementById('sound-toggle');
+            let soundEnabled = true;
+
+            // GSAP Intro Animation
+            const tl = gsap.timeline({ delay: 0.3 });
+
+            tl.to(logoText, {
+                opacity: 1,
+                duration: 1.2,
+                ease: 'power3.out',
+                scale: 1.05,
+            });
+            tl.to(logoText, {
+                scale: 1,
+                duration: 0.8,
+                ease: 'power2.out',
+            }, '-=0.4');
+
+            // Trigger speech & welcome text after ~3.5 seconds
+            tl.call(() => {
+                welcomeSub.style.opacity = '1';
+                welcomeSub.textContent = 'Welcome to GigaMerge Studio';
+                gsap.to(welcomeSub, { opacity: 1, duration: 0.7, ease: 'power2.out' });
+
+                if (soundEnabled && window.speechSynthesis) {
+                    const utterance = new SpeechSynthesisUtterance(
+                        'Welcome to GigaMerge Studio, Sir');
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.05;
+                    utterance.volume = 0.8;
+                    const voices = speechSynthesis.getVoices();
+                    const femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes(
+                        'Samantha') || v.name.includes('Google UK Female'));
+                    if (femaleVoice) utterance.voice = femaleVoice;
+                    speechSynthesis.speak(utterance);
+                }
+            }, null, '+=0.4');
+
+            // Fade out intro after ~5.5 seconds
+            tl.to(overlay, {
+                opacity: 0,
+                duration: 1,
+                ease: 'power2.inOut',
+                delay: 2.5,
+                onStart: () => {
+                    if (window.__threeScene) window.__threeScene.pullBackCamera();
+                },
+                onComplete: () => {
+                    overlay.classList.add('hidden');
+                    mainContent.classList.remove('init-hidden');
+                    mainContent.classList.add('visible');
+                    if (window.__threeScene) window.__threeScene.setIntroPhase(false);
+                    gsap.to(mainContent, { opacity: 1, duration: 0.8, ease: 'power2.out' });
+                }
+            });
+
+            // Sound toggle
+            soundToggle.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+                if (!soundEnabled) speechSynthesis.cancel();
+            });
+
+            // Preload voices
+            if (window.speechSynthesis) speechSynthesis.getVoices();
+        })();
+
+
+        // ===========================
+        // APP.JS - Scroll Animations & Interactions
+        // ===========================
+        (function() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Scroll reveal for sections
+            const sections = document.querySelectorAll('section');
+            sections.forEach((sec, i) => {
+                gsap.fromTo(sec, {
+                    opacity: 0,
+                    y: 60,
+                }, {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: 'power3.out',
+                    scrollTrigger: {
+                        trigger: sec,
+                        start: 'top 80%',
+                        end: 'top 30%',
+                        toggleActions: 'play none none reverse',
+                    },
+                    delay: i * 0.05,
+                });
+            });
+
+            // Glass cards stagger animation
+            const allGlassCards = document.querySelectorAll('.glass-card, .service-card, .timeline-step, .flip-card');
+            allGlassCards.forEach((card, i) => {
+                gsap.fromTo(card, {
+                    opacity: 0,
+                    y: 40,
+                    scale: 0.94,
+                }, {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 0.7,
+                    ease: 'back.out(1.4)',
+                    scrollTrigger: {
+                        trigger: card,
+                        start: 'top 88%',
+                        toggleActions: 'play none none reverse',
+                    },
+                    delay: i * 0.04,
+                });
+            });
+
+            // Mouse glow follower
+            const mouseGlow = document.getElementById('mouse-glow');
+            let mouseX = 0,
+                mouseY = 0;
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                mouseGlow.style.left = mouseX + 'px';
+                mouseGlow.style.top = mouseY + 'px';
+                mouseGlow.style.opacity = '1';
+            });
+            document.addEventListener('mouseleave', () => {
+                mouseGlow.style.opacity = '0';
+            });
+
+            // Smooth scroll for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        })();
+
+        // ===========================
+        // CHATBOT.JS
+        // ===========================
+        (function() {
+            const toggleBtn = document.getElementById('chatbot-toggle');
+            const panel = document.getElementById('chatbot-panel');
+            const messagesContainer = document.getElementById('chat-messages');
+            const chatInput = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('chat-send');
+
+            let isOpen = false;
+
+            toggleBtn.addEventListener('click', () => {
+                isOpen = !isOpen;
+                if (isOpen) {
+                    panel.classList.add('open');
+                    toggleBtn.textContent = '✕';
+                } else {
+                    panel.classList.remove('open');
+                    toggleBtn.textContent = '🤖';
+                }
+            });
+
+            function addMessage(text, type) {
+                const msgDiv = document.createElement('div');
+                msgDiv.classList.add('msg', type);
+                msgDiv.textContent = text;
+                messagesContainer.appendChild(msgDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            function getBotResponse(input) {
+                const query = input.toLowerCase().trim();
+
+                if (query.includes('service') || query.includes('offer') || query.includes('kya karte ho') ||
+                    query.includes('what do you do')) {
+                    return "Hum provide karte hain: 🎬 Video Editing, 🌐 Web Development, aur 💻 Coding & Development services. Sab kuch ek hi platform pe! 😎";
+                }
+                if (query.includes('join') || query.includes('network') || query.includes('kaise juden') || query
+                    .includes('apply')) {
+                    return "Aap humare network se judna chahte hain? Bahut accha! Contact form fill karein ya directly email karein. We'll review your portfolio and get back! 🚀";
+                }
+                if (query.includes('price') || query.includes('cost') || query.includes('kitna') || query.includes(
+                        'pricing')) {
+                    return "Pricing project-specific hoti hai. Basic editing se lekar full development tak, sab custom quote pe milta hai. Free consultation le sakte hain aap! 💬";
+                }
+                if (query.includes('team') || query.includes('who') || query.includes('kaun')) {
+                    return "Hamari team mein Founder, Operations Managers, Creative Editors, aur Skilled Developers hain — sab apne field ke experts! 🧠🎨💻";
+                }
+                if (query.includes('workflow') || query.includes('process') || query.includes('kaise kaam')) {
+                    return "Process simple hai: 1️⃣ Requirement → 2️⃣ Team Assignment → 3️⃣ Execution → 4️⃣ Delivery & Support. Smooth and professional! ⚙️";
+                }
+                if (query.includes('deadline') || query.includes('time') || query.includes('kitna time')) {
+                    return "Deadlines project pe depend karti hain, lekin hum fast delivery ke liye known hain! ⚡ Usually 2-7 days for most projects.";
+                }
+                if (query.includes('hi') || query.includes('hello') || query.includes('hey') || query.includes(
+                        'namaste')) {
+                    return "Namaste! 🙏 Kaise hain aap? Main GigaMerge AI assistant hoon. Batao kaise help kar sakta hoon?";
+                }
+                return "Samjha nahi main poora, lekin aap services, joining, pricing, team, ya workflow ke baare mein pooch sakte hain! 😊 Kya jaanna chahenge?";
+            }
+
+            function handleSend() {
+                const text = chatInput.value.trim();
+                if (!text) return;
+                addMessage(text, 'user');
+                chatInput.value = '';
+                setTimeout(() => {
+                    const response = getBotResponse(text);
+                    addMessage(response, 'bot');
+                }, 500 + Math.random() * 600);
+            }
+
+            sendBtn.addEventListener('click', handleSend);
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleSend();
+            });
+
+            // Close panel on outside click
+            document.addEventListener('click', (e) => {
+                if (isOpen && !panel.contains(e.target) && e.target !== toggleBtn && !toggleBtn.contains(e
+                        .target)) {
+                    isOpen = false;
+                    panel.classList.remove('open');
+                    toggleBtn.textContent = '🤖';
+                }
+            });
+        })();
+
+        // ===========================
+        // THEME SYSTEM
+        // ===========================
+        (function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const buttons = themeToggle.querySelectorAll('button');
+            const html = document.documentElement;
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const theme = btn.dataset.theme;
+                    html.setAttribute('data-theme', theme);
+                    localStorage.setItem('gigamerge-theme', theme);
+                    buttons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    // Animate transition
+                    gsap.to('body', {
+                        opacity: 0.85,
+                        duration: 0.15,
+                        yoyo: true,
+                        repeat: 1,
+                        ease: 'power2.inOut',
+                    });
+                });
+            });
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('gigamerge-theme');
+            if (savedTheme) {
+                html.setAttribute('data-theme', savedTheme);
+                buttons.forEach(b => {
+                    b.classList.remove('active');
+                    if (b.dataset.theme === savedTheme) b.classList.add('active');
+                });
+            }
+        })();
+
+        // ===========================
+        // SERVICE CARD EXPAND ON CLICK
+        // ===========================
+        (function() {
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const wasExpanded = this.classList.contains('expanded');
+                    document.querySelectorAll('.service-card').forEach(c => c.classList.remove(
+                        'expanded'));
+                    if (!wasExpanded) {
+                        this.classList.add('expanded');
+                        gsap.to(this, {
+                            scale: 1.06,
+                            duration: 0.4,
+                            ease: 'back.out(2)',
+                            boxShadow: '0 30px 70px rgba(0,0,0,0.7), 0 0 60px rgba(0,229,255,0.5)',
+                        });
+                    } else {
+                        gsap.to(this, {
+                            scale: 1,
+                            duration: 0.4,
+                            ease: 'power2.out',
+                            boxShadow: 'var(--card-shadow)',
+                        });
+                    }
+                });
+            });
+        })();
+
+        // Log welcome
+        console.log('%c🚀 GigaMerge Studio %c| %cCreative Tech Ecosystem %cReady',
+            'color:#00e5ff;font-size:1.5rem;font-weight:bold;',
+            '',
+            'color:#a855f7;font-size:1rem;',
+            'color:#fff;');
+        console.log('%c💡 All systems initialized. Welcome aboard!', 'color:#3b82f6;');
+    </script>
+</body>
+</html>
